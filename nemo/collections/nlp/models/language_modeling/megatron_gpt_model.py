@@ -1338,9 +1338,10 @@ class MegatronGPTModel(MegatronBaseModel, TextGeneration):
         losses = output_tensor.float()
         loss_mask = loss_mask.view(-1).float()
         # TODO: add nemo version here
-        loss = torch.sum(losses.view(-1) * loss_mask) / num_valid_tokens_in_ub / parallel_state.get_context_parallel_world_size() # sequence level nll
+        loss = torch.sum(losses.view(-1) * loss_mask) / num_valid_tokens_in_ub # sequence level nll
         if parallel_state.get_context_parallel_world_size() > 1:
             torch.distributed.all_reduce(loss, group=parallel_state.get_context_parallel_group())
+            loss /= parallel_state.get_context_parallel_world_size()
         return loss
 
     def build_train_valid_test_datasets(self):
